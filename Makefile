@@ -1,7 +1,9 @@
 .DEFAULT_GOAL := help
 
 DC      := docker compose
-PHP     := $(DC) exec php
+# Without a terminal (CI, scripts) exec needs -T, or its output is lost.
+TTY     := $(shell test -t 0 || echo -T)
+PHP     := $(DC) exec $(TTY) php
 CONSOLE := $(PHP) bin/console
 
 .PHONY: help init build up down restart ps logs sh install migrate migration db-test test stan cs-fix cs-check check cc

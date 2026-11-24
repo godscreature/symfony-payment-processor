@@ -1,0 +1,8 @@
+framework:
+    rate_limiter:
+        # POST /api/v1/orders: at most 20 requests per minute per client IP.
+        create_order:
+            policy: sliding_window
+            limit: 20
+            interval: '1 minute'
+            cache_pool: rate_limiter.cache

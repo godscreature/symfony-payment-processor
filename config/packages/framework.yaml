@@ -2,6 +2,11 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
+    # Proxies (load balancer, CDN) allowed to report the real client IP in X-Forwarded-For.
+    # Requests from any other address ignore these headers, so clients cannot spoof their IP.
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-port', 'x-forwarded-proto']
+
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 

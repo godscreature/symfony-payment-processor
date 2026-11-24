@@ -4,6 +4,18 @@ nelmio_api_doc:
             title: SPS — Order & Payment Processing API
             description: Async order and payment processing service.
             version: 1.0.0
+        components:
+            # Shared response headers, referenced from controllers via #/components/headers/...
+            headers:
+                X-RateLimit-Limit:
+                    description: Maximum number of requests allowed in the current window (1 minute).
+                    schema: { type: integer, example: 20 }
+                X-RateLimit-Remaining:
+                    description: Requests left in the current window.
+                    schema: { type: integer, example: 19 }
+                Retry-After:
+                    description: Seconds to wait before retrying.
+                    schema: { type: integer, example: 42 }
     areas: # to filter documented areas
         path_patterns:
             - ^/api(?!/doc(\.json)?$) # Accepts routes under /api except the docs themselves

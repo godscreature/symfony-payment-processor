@@ -187,8 +187,11 @@ final class CreateOrderControllerTest extends WebTestCase
     /**
      * @param array<string, mixed> $payload
      */
-    private function post(array $payload, string $remoteAddr = self::TRUSTED_PROXY_IP, ?string $forwardedFor = null): void
-    {
+    private function post(
+        array $payload,
+        string $remoteAddr = self::TRUSTED_PROXY_IP,
+        ?string $forwardedFor = null,
+    ): void {
         $server = ['CONTENT_TYPE' => 'application/json', 'REMOTE_ADDR' => $remoteAddr];
         if ($forwardedFor !== null) {
             $server['HTTP_X_FORWARDED_FOR'] = $forwardedFor;

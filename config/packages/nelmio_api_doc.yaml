@@ -5,6 +5,14 @@ nelmio_api_doc:
             description: Async order and payment processing service.
             version: 1.0.0
         components:
+            # "Authorize" button in Swagger UI: the simulated API token is the user's UUID.
+            securitySchemes:
+                UserId:
+                    type: apiKey
+                    in: header
+                    name: X-User-Id
+                    description: Your user id (UUID). Orders are visible and payable only by the customer who owns them.
+
             # Shared response headers, referenced from controllers via #/components/headers/...
             headers:
                 X-RateLimit-Limit:
@@ -16,6 +24,46 @@ nelmio_api_doc:
                 Retry-After:
                     description: Seconds to wait before retrying.
                     schema: { type: integer, example: 42 }
+                Idempotent-Replayed:
+                    description: '"true" when the response was replayed from an earlier request with the same Idempotency-Key.'
+                    schema: { type: string, enum: ['true', 'false'], example: 'false' }
+
+            # Shared error responses, referenced via #/components/responses/...
+            responses:
+                Unauthorized:
+                    description: X-User-Id header is missing or not a UUID
+                    content:
+                        application/problem+json:
+                            schema: { $ref: '#/components/schemas/ErrorResponse' }
+                            example: { status: 401, title: Unauthorized, detail: 'Authentication required: send your user id in the X-User-Id header.', violations: [] }
+                Forbidden:
+                    description: The order belongs to another customer
+                    content:
+                        application/problem+json:
+                            schema: { $ref: '#/components/schemas/ErrorResponse' }
+                            example: { status: 403, title: Forbidden, detail: Access Denied., violations: [] }
+                NotFound:
+                    description: Order not found
+                    content:
+                        application/problem+json:
+                            schema: { $ref: '#/components/schemas/ErrorResponse' }
+                            example: { status: 404, title: Not Found, detail: Order 0190f7d2-1a2b-7c3d-8e4f-5a6b7c8d9e0f not found., violations: [] }
     areas: # to filter documented areas
         path_patterns:
             - ^/api(?!/doc(\.json)?$) # Accepts routes under /api except the docs themselves
+    # Public schema names without the internal "Dto" class suffix.
+    # Order matters: nelmio describes each model as soon as it is listed, including the models nested in it,
+    # so a nested model must be listed BEFORE the model that contains it, or it keeps its class name.
+    models:
+        names:
+            # Nested models first.
+            - { alias: OrderItemRequest, type: App\Dto\Order\OrderItemRequestDto }
+            - { alias: OrderItemResponse, type: App\Dto\Order\OrderItemResponseDto }
+            - { alias: OrderSummaryResponse, type: App\Dto\Order\OrderSummaryResponseDto }
+            - { alias: ViolationResponse, type: App\Dto\Error\ViolationResponseDto }
+            # Then the models that contain them.
+            - { alias: CreateOrderRequest, type: App\Dto\Order\CreateOrderRequestDto }
+            - { alias: ListOrdersQuery, type: App\Dto\Order\ListOrdersQueryDto }
+            - { alias: OrderResponse, type: App\Dto\Order\OrderResponseDto }
+            - { alias: OrderListResponse, type: App\Dto\Order\OrderListResponseDto }
+            - { alias: ErrorResponse, type: App\Dto\Error\ErrorResponseDto }

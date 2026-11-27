@@ -7,7 +7,7 @@ namespace App\Dto\Order;
 use App\Entity\OrderItem;
 use OpenApi\Attributes as OA;
 
-final readonly class OrderItemResponse
+final readonly class OrderItemResponseDto
 {
     public function __construct(
         #[OA\Property(format: 'uuid')]

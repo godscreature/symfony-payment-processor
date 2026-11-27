@@ -6,6 +6,8 @@ namespace App\Entity;
 
 use App\Enum\Currency;
 use App\Enum\OrderStatus;
+use App\Enum\PaymentGateway;
+use App\Exception\OrderNotPayableException;
 use App\Repository\OrderRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -54,6 +56,15 @@ class Order
     #[ORM\Column(type: Types::INTEGER)]
     private int $version = 1;
 
+    #[ORM\Column(length: 32, nullable: true, enumType: PaymentGateway::class)]
+    private ?PaymentGateway $paymentGateway = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $paymentTransactionId = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $paidAt = null;
+
     public function __construct(Uuid $customerId, Currency $currency)
     {
         $this->id = Uuid::v7();
@@ -71,6 +82,26 @@ class Order
         $this->totalAmount += $item->getLineTotal();
 
         return $item;
+    }
+
+    /**
+     * @throws OrderNotPayableException when the order is not NEW (already paid or cancelled)
+     */
+    public function markPaid(PaymentGateway $gateway, string $transactionId): void
+    {
+        if ($this->status !== OrderStatus::NEW) {
+            throw OrderNotPayableException::forStatus($this->id, $this->status);
+        }
+
+        $this->status = OrderStatus::PAID;
+        $this->paymentGateway = $gateway;
+        $this->paymentTransactionId = $transactionId;
+        $this->paidAt = new \DateTimeImmutable();
+    }
+
+    public function isOwnedBy(Uuid $customerId): bool
+    {
+        return $this->customerId->equals($customerId);
     }
 
     #[ORM\PreUpdate]
@@ -125,5 +156,20 @@ class Order
     public function getVersion(): int
     {
         return $this->version;
+    }
+
+    public function getPaymentGateway(): ?PaymentGateway
+    {
+        return $this->paymentGateway;
+    }
+
+    public function getPaymentTransactionId(): ?string
+    {
+        return $this->paymentTransactionId;
+    }
+
+    public function getPaidAt(): ?\DateTimeImmutable
+    {
+        return $this->paidAt;
     }
 }

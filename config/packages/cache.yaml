@@ -9,3 +9,8 @@ framework:
             # Counters for symfony/rate-limiter, shared by all PHP workers.
             rate_limiter.cache:
                 adapter: cache.adapter.redis
+
+            # Orders read by CachedOrderRepository; tags allow invalidating one order on change.
+            orders.cache:
+                adapter: cache.adapter.redis_tag_aware
+                default_lifetime: 300

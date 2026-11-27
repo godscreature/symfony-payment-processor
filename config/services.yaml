@@ -23,3 +23,9 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Repository\OrderRepositoryInterface: '@App\Repository\OrderRepository'
+
+    # Raw Redis connection for commands the cache component does not offer (SET NX, Lua), used by IdempotencyService.
+    app.redis:
+        class: Redis
+        factory: ['Symfony\Component\Cache\Adapter\RedisAdapter', 'createConnection']
+        arguments: ['%env(REDIS_URL)%']

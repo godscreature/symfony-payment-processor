@@ -7,7 +7,7 @@ namespace App\Dto\Order;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class OrderItemRequest
+final readonly class OrderItemRequestDto
 {
     public const int MAX_QUANTITY = 10_000;
     public const int MAX_UNIT_PRICE = 100_000_000;

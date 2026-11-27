@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Attribute\RateLimit;
-use App\Dto\Error\ErrorResponse;
-use App\Dto\Order\CreateOrderRequest;
-use App\Dto\Order\OrderResponse;
+use App\Dto\Error\ErrorResponseDto;
+use App\Dto\Order\CreateOrderRequestDto;
+use App\Dto\Order\OrderResponseDto;
 use App\Service\OrderService;
 use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes as OA;
@@ -34,7 +34,7 @@ final class CreateOrderController extends AbstractController
             new OA\Header(ref: '#/components/headers/X-RateLimit-Limit', header: 'X-RateLimit-Limit'),
             new OA\Header(ref: '#/components/headers/X-RateLimit-Remaining', header: 'X-RateLimit-Remaining'),
         ],
-        content: new OA\JsonContent(ref: new Model(type: OrderResponse::class)),
+        content: new OA\JsonContent(ref: new Model(type: OrderResponseDto::class)),
     )]
     #[OA\Response(
         response: Response::HTTP_BAD_REQUEST,
@@ -44,8 +44,13 @@ final class CreateOrderController extends AbstractController
             new OA\Header(ref: '#/components/headers/X-RateLimit-Remaining', header: 'X-RateLimit-Remaining'),
         ],
         content: new OA\JsonContent(
-            ref: new Model(type: ErrorResponse::class),
-            example: ['status' => 400, 'title' => 'Bad Request', 'detail' => 'Request payload contains invalid "json" data.', 'violations' => []],
+            ref: new Model(type: ErrorResponseDto::class),
+            example: [
+                'status' => 400,
+                'title' => 'Bad Request',
+                'detail' => 'Request payload contains invalid "json" data.',
+                'violations' => [],
+            ],
         ),
     )]
     #[OA\Response(
@@ -56,8 +61,13 @@ final class CreateOrderController extends AbstractController
             new OA\Header(ref: '#/components/headers/X-RateLimit-Remaining', header: 'X-RateLimit-Remaining'),
         ],
         content: new OA\JsonContent(
-            ref: new Model(type: ErrorResponse::class),
-            example: ['status' => 415, 'title' => 'Unsupported Media Type', 'detail' => 'Unsupported format, expects "json", but "txt" given.', 'violations' => []],
+            ref: new Model(type: ErrorResponseDto::class),
+            example: [
+                'status' => 415,
+                'title' => 'Unsupported Media Type',
+                'detail' => 'Unsupported format, expects "json", but "txt" given.',
+                'violations' => [],
+            ],
         ),
     )]
     #[OA\Response(
@@ -68,11 +78,16 @@ final class CreateOrderController extends AbstractController
             new OA\Header(ref: '#/components/headers/X-RateLimit-Remaining', header: 'X-RateLimit-Remaining'),
         ],
         content: new OA\JsonContent(
-            ref: new Model(type: ErrorResponse::class),
-            example: ['status' => 422, 'title' => 'Validation Failed', 'detail' => 'The request contains invalid data.', 'violations' => [
-                ['propertyPath' => 'customerId', 'message' => 'This is not a valid UUID.'],
-                ['propertyPath' => 'items[0].quantity', 'message' => 'This value should be positive.'],
-            ]],
+            ref: new Model(type: ErrorResponseDto::class),
+            example: [
+                'status' => 422,
+                'title' => 'Validation Failed',
+                'detail' => 'The request contains invalid data.',
+                'violations' => [
+                    ['propertyPath' => 'customerId', 'message' => 'This is not a valid UUID.'],
+                    ['propertyPath' => 'items[0].quantity', 'message' => 'This value should be positive.'],
+                ],
+            ],
         ),
     )]
     #[OA\Response(
@@ -84,14 +99,19 @@ final class CreateOrderController extends AbstractController
             new OA\Header(ref: '#/components/headers/X-RateLimit-Remaining', header: 'X-RateLimit-Remaining'),
         ],
         content: new OA\JsonContent(
-            ref: new Model(type: ErrorResponse::class),
-            example: ['status' => 429, 'title' => 'Too Many Requests', 'detail' => 'Too many requests. Please retry later.', 'violations' => []],
+            ref: new Model(type: ErrorResponseDto::class),
+            example: [
+                'status' => 429,
+                'title' => 'Too Many Requests',
+                'detail' => 'Too many requests. Please retry later.',
+                'violations' => [],
+            ],
         ),
     )]
-    public function __invoke(#[MapRequestPayload(acceptFormat: 'json')] CreateOrderRequest $request): JsonResponse
+    public function __invoke(#[MapRequestPayload(acceptFormat: 'json')] CreateOrderRequestDto $request): JsonResponse
     {
         $order = $this->orderService->create($request);
 
-        return $this->json(OrderResponse::fromEntity($order), Response::HTTP_CREATED);
+        return $this->json(OrderResponseDto::fromEntity($order), Response::HTTP_CREATED);
     }
 }

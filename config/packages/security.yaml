@@ -12,6 +12,17 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler(/|$)|(_wdt|assets|build)/)
             security: false
+        api:
+            pattern: ^/api/v1
+            # No sessions or cookies: every request identifies itself with X-User-Id.
+            stateless: true
+            # Authenticate only when the endpoint checks access, so public endpoints ignore the header.
+            lazy: true
+            provider: users_in_memory
+            custom_authenticators:
+                - App\Security\HeaderUserAuthenticator
+            # Answers 401 when an endpoint needs a user and the request has none.
+            entry_point: App\Security\HeaderUserAuthenticator
         main:
             lazy: true
             provider: users_in_memory

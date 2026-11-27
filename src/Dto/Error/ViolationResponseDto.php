@@ -6,7 +6,7 @@ namespace App\Dto\Error;
 
 use OpenApi\Attributes as OA;
 
-final readonly class ViolationResponse
+final readonly class ViolationResponseDto
 {
     public function __construct(
         #[OA\Property(example: 'items[0].quantity')]

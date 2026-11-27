@@ -8,12 +8,12 @@ use App\Enum\Currency;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final readonly class CreateOrderRequest
+final readonly class CreateOrderRequestDto
 {
     public const int MAX_ITEMS = 100;
 
     /**
-     * @param list<OrderItemRequest> $items
+     * @param list<OrderItemRequestDto> $items
      */
     public function __construct(
         #[Assert\NotBlank]

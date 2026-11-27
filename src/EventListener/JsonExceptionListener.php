@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\EventListener;
 
-use App\Dto\Error\ErrorResponse;
-use App\Dto\Error\ViolationResponse;
+use App\Dto\Error\ViolationResponseDto;
+use App\Http\ProblemResponse;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\WithHttpStatus;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -33,34 +33,68 @@ final readonly class JsonExceptionListener
 
     public function __invoke(ExceptionEvent $event): void
     {
-        $exception = $event->getThrowable();
-        $headers = [];
-        $violations = [];
-        $list = $this->findViolations($exception);
+        $event->setResponse($this->createResponse($event->getThrowable()));
+    }
 
-        if ($list !== null) {
-            $status = Response::HTTP_UNPROCESSABLE_ENTITY;
-            $title = 'Validation Failed';
-            $detail = 'The request contains invalid data.';
-            $violations = $this->mapViolations($list);
-        } elseif ($exception instanceof HttpExceptionInterface) {
-            $status = $exception->getStatusCode();
-            $headers = $exception->getHeaders();
-            $title = Response::$statusTexts[$status] ?? 'Error';
-            // 5xx messages may contain internals; 4xx messages are written for the client.
-            $detail = $status < 500 && $exception->getMessage() !== '' ? $exception->getMessage() : $title;
-        } else {
-            $status = Response::HTTP_INTERNAL_SERVER_ERROR;
-            $title = Response::$statusTexts[$status];
-            $detail = $this->debug ? $exception::class.': '.$exception->getMessage() : 'An unexpected error occurred.';
+    private function createResponse(\Throwable $exception): ProblemResponse
+    {
+        $violations = $this->findViolations($exception);
+        if ($violations !== null) {
+            return new ProblemResponse(
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                'The request contains invalid data.',
+                $this->mapViolations($violations),
+                title: 'Validation Failed',
+            );
         }
 
-        $response = new JsonResponse(null, $status, $headers);
-        $response->setEncodingOptions(\JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR);
-        $response->setData(new ErrorResponse($status, $title, $detail, $violations));
-        $response->headers->set('Content-Type', 'application/problem+json');
+        // Symfony HTTP exceptions: 400, 404, 415, 429, access denied, ...
+        if ($exception instanceof HttpExceptionInterface) {
+            return new ProblemResponse(
+                $exception->getStatusCode(),
+                $this->clientMessage($exception, $exception->getStatusCode()),
+                headers: $exception->getHeaders(),
+            );
+        }
 
-        $event->setResponse($response);
+        // Domain exceptions declare their status with #[WithHttpStatus].
+        $httpStatus = $this->findHttpStatus($exception);
+        if ($httpStatus !== null) {
+            return new ProblemResponse(
+                $httpStatus->statusCode,
+                $this->clientMessage($exception, $httpStatus->statusCode),
+                headers: $httpStatus->headers,
+            );
+        }
+
+        return new ProblemResponse(
+            Response::HTTP_INTERNAL_SERVER_ERROR,
+            $this->debug ? $exception::class.': '.$exception->getMessage() : 'An unexpected error occurred.',
+        );
+    }
+
+    /**
+     * 4xx messages are written for the client; 5xx messages may contain internals.
+     */
+    private function clientMessage(\Throwable $exception, int $status): string
+    {
+        if ($status >= 500 || $exception->getMessage() === '') {
+            return Response::$statusTexts[$status] ?? 'Error';
+        }
+
+        return $exception->getMessage();
+    }
+
+    private function findHttpStatus(\Throwable $exception): ?WithHttpStatus
+    {
+        for ($class = new \ReflectionClass($exception); $class !== false; $class = $class->getParentClass()) {
+            $attributes = $class->getAttributes(WithHttpStatus::class, \ReflectionAttribute::IS_INSTANCEOF);
+            if ($attributes !== []) {
+                return $attributes[0]->newInstance();
+            }
+        }
+
+        return null;
     }
 
     private function findViolations(\Throwable $exception): ?ConstraintViolationListInterface
@@ -72,13 +106,13 @@ final readonly class JsonExceptionListener
     }
 
     /**
-     * @return list<ViolationResponse>
+     * @return list<ViolationResponseDto>
      */
     private function mapViolations(ConstraintViolationListInterface $list): array
     {
         $result = [];
         foreach ($list as $violation) {
-            $result[] = new ViolationResponse($violation->getPropertyPath(), (string) $violation->getMessage());
+            $result[] = new ViolationResponseDto($violation->getPropertyPath(), (string) $violation->getMessage());
         }
 
         return $result;

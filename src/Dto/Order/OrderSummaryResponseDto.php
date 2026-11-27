@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace App\Dto\Order;
 
 use App\Entity\Order;
-use App\Entity\OrderItem;
 use OpenApi\Attributes as OA;
 
-final readonly class OrderResponse
+/**
+ * One order in a list: no line items, so a page is loaded with a single query.
+ * Full details: GET /api/v1/orders/{id}.
+ */
+final readonly class OrderSummaryResponseDto
 {
-    /**
-     * @param list<OrderItemResponse> $items
-     */
     public function __construct(
         #[OA\Property(format: 'uuid')]
         public string $id,
-        #[OA\Property(format: 'uuid')]
-        public string $customerId,
         #[OA\Property(example: 'NEW', enum: ['NEW', 'PAID', 'CANCELLED'])]
         public string $status,
         #[OA\Property(example: 'UAH', enum: ['UAH', 'USD', 'EUR'])]
@@ -26,7 +24,8 @@ final readonly class OrderResponse
         public int $totalAmount,
         #[OA\Property(format: 'date-time')]
         public string $createdAt,
-        public array $items,
+        #[OA\Property(format: 'date-time', nullable: true)]
+        public ?string $paidAt,
     ) {
     }
 
@@ -34,15 +33,11 @@ final readonly class OrderResponse
     {
         return new self(
             id: $order->getId()->toRfc4122(),
-            customerId: $order->getCustomerId()->toRfc4122(),
             status: $order->getStatus()->value,
             currency: $order->getCurrency()->value,
             totalAmount: $order->getTotalAmount(),
             createdAt: $order->getCreatedAt()->format(\DateTimeInterface::ATOM),
-            items: array_values(array_map(
-                static fn (OrderItem $item): OrderItemResponse => OrderItemResponse::fromEntity($item),
-                $order->getItems()->toArray(),
-            )),
+            paidAt: $order->getPaidAt()?->format(\DateTimeInterface::ATOM),
         );
     }
 }

@@ -6,3 +6,10 @@ framework:
             limit: 20
             interval: '1 minute'
             cache_pool: rate_limiter.cache
+
+        # POST /api/v1/orders/{id}/pay: at most 10 requests per minute per client IP.
+        pay_order:
+            policy: sliding_window
+            limit: 10
+            interval: '1 minute'
+            cache_pool: rate_limiter.cache

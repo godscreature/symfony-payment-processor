@@ -9,10 +9,10 @@ use OpenApi\Attributes as OA;
 /**
  * Error body in the RFC 9457 "problem details" shape, used for every API error.
  */
-final readonly class ErrorResponse
+final readonly class ErrorResponseDto
 {
     /**
-     * @param list<ViolationResponse> $violations
+     * @param list<ViolationResponseDto> $violations
      */
     public function __construct(
         #[OA\Property(example: 422)]

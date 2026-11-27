@@ -1,0 +1,64 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make help)",
+      "Bash(make ps)",
+      "Bash(make up)",
+      "Bash(make build)",
+      "Bash(make install)",
+      "Bash(make migration)",
+      "Bash(make migrate)",
+      "Bash(make db-test)",
+      "Bash(make cc)",
+      "Bash(make console *)",
+      "Bash(make test)",
+      "Bash(make stan)",
+      "Bash(make cs-fix)",
+      "Bash(make cs-check)",
+      "Bash(make check)",
+      "Bash(docker compose ps)",
+      "Bash(docker compose logs *)",
+      "Bash(docker compose exec php bin/console *)",
+      "Bash(docker compose exec -T php bin/console *)",
+      "Bash(docker compose exec php bin/phpunit *)",
+      "Bash(docker compose exec -T php bin/phpunit *)",
+      "Bash(docker compose exec php vendor/bin/*)",
+      "Bash(docker compose exec -T php vendor/bin/*)",
+      "Bash(docker compose exec php composer *)",
+      "Bash(docker compose exec -T php composer *)"
+    ],
+    "ask": [
+      "Bash(git commit)",
+      "Bash(git commit *)"
+    ],
+    "deny": [
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(ssh)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(sftp *)",
+      "Bash(rsync *)",
+      "Bash(docker push *)",
+      "Bash(docker login *)",
+      "Bash(docker compose push *)",
+      "Bash(kubectl *)",
+      "Bash(helm *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_commands.py\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ]
+  }
+}

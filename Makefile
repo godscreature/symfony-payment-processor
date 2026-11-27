@@ -6,7 +6,7 @@ TTY     := $(shell test -t 0 || echo -T)
 PHP     := $(DC) exec $(TTY) php
 CONSOLE := $(PHP) bin/console
 
-.PHONY: help init build up down restart ps logs sh install migrate migration db-test test stan cs-fix cs-check check cc
+.PHONY: help init build up down restart ps logs sh console install migrate migration db-test test stan cs-fix cs-check phpcs check cc
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -35,6 +35,9 @@ sh: ## Open a shell in the PHP container
 	$(PHP) bash
 
 ## —— App ———————————————————————————————————————————————
+console: ## Run a Symfony console command: make console c="debug:router"
+	$(CONSOLE) $(c)
+
 install: ## Install Composer dependencies
 	$(PHP) composer install
 
@@ -62,7 +65,11 @@ stan: ## Run PHPStan (level 8)
 cs-fix: ## Fix code style
 	$(PHP) vendor/bin/php-cs-fixer fix
 
-cs-check: ## Check code style without changing files
+cs-check: ## Check code style without changing files (CS-Fixer + CodeSniffer)
 	$(PHP) vendor/bin/php-cs-fixer fix --dry-run --diff
+	$(PHP) vendor/bin/phpcs
+
+phpcs: ## Line length and assignment-in-condition checks (PHP_CodeSniffer)
+	$(PHP) vendor/bin/phpcs
 
 check: cs-check stan test ## Run all quality checks

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PHP_CodeSniffer checks only what PHP-CS-Fixer cannot: code style itself is formatted by
+    .php-cs-fixer.dist.php, so no style rulesets (PSR-12, Symfony) are enabled here.
+    Copy to phpcs.xml for personal overrides (gitignored).
+-->
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/squizlabs/php_codesniffer/phpcs.xsd"
+         name="SPS">
+    <arg name="basepath" value="."/>
+    <arg name="cache" value="var/.phpcs-cache"/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+    <arg value="sp"/>
+
+    <file>src/</file>
+    <file>tests/</file>
+
+    <!-- PSR-12 soft limit: no line longer than 120 characters. -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="120"/>
+        </properties>
+    </rule>
+
+    <!-- Assign on its own line, never inside if/elseif/while/do-while conditions. -->
+    <rule ref="SlevomatCodingStandard.ControlStructures.AssignmentInCondition"/>
+</ruleset>
